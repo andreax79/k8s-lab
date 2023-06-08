@@ -1,0 +1,23 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: traefik-k8s
+  namespace: traefik
+spec:
+  secretName: traefik-k8s-tls
+  isCA: false
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  usages:
+    - server auth
+    - client auth
+  duration: 1400h
+  renewBefore: 24h
+  commonName: traefik.k8s
+  dnsNames:
+    - traefik.k8s
+  issuerRef:
+    name: test-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
