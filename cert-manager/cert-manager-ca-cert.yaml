@@ -5,12 +5,14 @@ metadata:
   namespace: cert-manager
 spec:
   isCA: true
-  commonName: test-ca
+  commonName: k8s-test-ca
+  duration: 87696h # 10y
+  renewBefore: 360h # 15d
   subject:
     organizations:
-      - Test
+      - test
     organizationalUnits:
-      - Test
+      - k8s
   secretName: test-ca-secret
   privateKey:
     algorithm: ECDSA
