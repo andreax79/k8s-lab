@@ -1,0 +1,83 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: whoami-k8s
+spec:
+  secretName: whoami-k8s-tls
+  isCA: false
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  usages:
+    - server auth
+    - client auth
+  duration: 1400h
+  renewBefore: 24h
+  commonName: whoami.k8s
+  dnsNames:
+    - whoami.k8s
+  issuerRef:
+    name: test-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      securityContext:
+          runAsUser: 65534
+          runAsGroup: 65534
+      containers:
+      - name: whoami
+        image: traefik/whoami
+        args: ["--port=8080" ]
+        ports:
+        - containerPort: 8080
+        securityContext:
+          runAsUser: 65534
+          allowPrivilegeEscalation: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.100.128
+  selector:
+    app: whoami
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8080
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: whoami-ingress-route
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`whoami.k8s`)
+      kind: Rule
+      services:
+        - name: whoami
+          port: 80
+  tls:
+    secretName: whoami-k8s-tls
